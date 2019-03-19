@@ -1,0 +1,37 @@
+commit 2b9e4e783e392c64f0423bafcc6b361f89dbd655
+Author: Styopa Semenukha <ssemenukha@developmentgateway.org>
+Date:   Tue Mar 19 12:27:45 2019 -0400
+
+    Add FIPS init call
+
+diff --git a/src/event/ngx_event_openssl.c b/src/event/ngx_event_openssl.c
+index e18778e2..5cfc8b40 100644
+--- a/src/event/ngx_event_openssl.c
++++ b/src/event/ngx_event_openssl.c
+@@ -155,11 +155,26 @@ ngx_ssl_init(ngx_log_t *log)
+ 
+ #else
+ 
++#ifdef OPENSSL_FIPS
++    char *error_string;
++#endif
++
+     OPENSSL_config(NULL);
+ 
+     SSL_library_init();
+     SSL_load_error_strings();
+ 
++#ifdef OPENSSL_FIPS
++    if (FIPS_mode_set(1)) {
++        ngx_ssl_error(NGX_LOG_NOTICE, log, 0, "FIPS mode enabled");
++    } else {
++        error_string = ERR_error_string(ERR_get_error(), NULL);
++        ngx_ssl_error(NGX_LOG_ALERT, log, 0, error_string);
++        ERR_free_strings();
++        return NGX_ERROR;
++    }
++#endif
++
+     OpenSSL_add_all_algorithms();
+ 
+ #endif
