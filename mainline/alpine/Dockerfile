@@ -1,8 +1,10 @@
-FROM alpine:3.9
+FROM devgateway/openssl-fips
 
-LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
+LABEL maintainer="Development Gateway <info@developmentgateway.org>"
 
 ENV NGINX_VERSION 1.15.9
+
+COPY fips.patch /usr/src/
 
 RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
 	&& CONFIG="\
@@ -56,7 +58,6 @@ RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
 		gcc \
 		libc-dev \
 		make \
-		openssl-dev \
 		pcre-dev \
 		zlib-dev \
 		linux-headers \
@@ -85,6 +86,7 @@ RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
 	&& tar -zxC /usr/src -f nginx.tar.gz \
 	&& rm nginx.tar.gz \
 	&& cd /usr/src/nginx-$NGINX_VERSION \
+	&& patch -p1 < ../fips.patch \
 	&& ./configure $CONFIG --with-debug \
 	&& make -j$(getconf _NPROCESSORS_ONLN) \
 	&& mv objs/nginx objs/nginx-debug \
